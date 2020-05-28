@@ -47,3 +47,26 @@ jobs:
     - name: make
       run: make MALLOC=libc
 
+  test-valgrind:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14400
+    steps:
+    - uses: actions/checkout@v1
+    - name: make
+      run: make valgrind
+    - name: install valgrind
+      run: |
+        sudo apt-get install valgrind -y
+        #sudo apt-get install libc6-dbg -y
+        #wget https://sourceware.org/pub/valgrind/valgrind-3.16.0.tar.bz2
+        #tar xf valgrind-3.16.0.tar.bz2
+        #cd valgrind-3.16.0
+        #./configure && make
+        #sudo make install
+        #cd ..
+    - name: test
+      run: |
+        sudo apt-get install tcl8.5 -y
+        ./runtest --valgrind --verbose --clients 1
+    - name: module api test
+      run: ./runtest-moduleapi --valgrind --verbose --clients 1
