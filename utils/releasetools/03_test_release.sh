@@ -1,7 +1,7 @@
 #!/bin/sh
 if [ $# != "1" ]
 then
-    echo "Usage: ${0} <git-ref>"
+    echo "Usage: utils/releasetools/03_test_release.sh <version>"
     exit 1
 fi
 
@@ -9,7 +9,7 @@ TAG=$1
 TARNAME="redis-${TAG}.tar.gz"
 DOWNLOADURL="http://download.redis.io/releases/${TARNAME}"
 
-ssh antirez@metal "export TERM=xterm;
+ssh ci.redis.io   "export TERM=xterm;
                    cd /tmp;
                    rm -rf test_release_tmp_dir;
                    cd test_release_tmp_dir;
@@ -21,6 +21,6 @@ ssh antirez@metal "export TERM=xterm;
                    make;
                    ./runtest;
                    ./runtest-sentinel;
-                   if [ -x runtest-cluster ]; then
-                       ./runtest-cluster;
-                   fi"
+                   ./runtest-cluster;
+                   ./runtest-moduleapi;
+
