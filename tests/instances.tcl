@@ -98,6 +98,7 @@ proc spawn_instance {type base_port count {conf {}}} {
 
         # Check availability
         if {[server_is_up 127.0.0.1 $port 100] == 0} {
+	    puts [exec cat $dirname/log.txt]
             abort_sentinel_test "Problems starting $type #$j: ping timeout"
         }
 
