@@ -1625,12 +1625,12 @@ int clientsCronTrackExpansiveClients(client *c) {
     return 0; /* This function never terminates the client. */
 }
 
-/* Iterating all the clients in getMemoryOverheadData() is too slow and
+/* Iterating all the clients when we need the total is too slow and
  * in turn would make the INFO command too slow. So we perform this
  * computation incrementally and track the (not instantaneous but updated
  * to the second) total memory used by clients using clinetsCron() in
  * a more incremental way (depending on server.hz). */
-int clientsCronTrackClientsMemUsage(client *c) {
+int updateClientMemUsage(client *c) {
     size_t mem = 0;
     int type = getClientType(c);
     mem += getClientOutputBufferMemoryUsage(c);
@@ -1709,7 +1709,7 @@ void clientsCron(void) {
         if (clientsCronHandleTimeout(c,now)) continue;
         if (clientsCronResizeQueryBuffer(c)) continue;
         if (clientsCronTrackExpansiveClients(c)) continue;
-        if (clientsCronTrackClientsMemUsage(c)) continue;
+        if (updateClientMemUsage(c)) continue;
     }
 }
 
@@ -2281,6 +2281,9 @@ void beforeSleep(struct aeEventLoop *eventLoop) {
 
     /* Close clients that need to be closed asynchronous */
     freeClientsInAsyncFreeQueue();
+
+    /* Disconnect some clients if they are consuming too much memory. */
+    clientsEviction();
 
     /* Before we are going to sleep, let the threads access the dataset by
      * releasing the GIL. Redis main thread will not touch anything at this
