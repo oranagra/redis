@@ -1599,7 +1599,7 @@ size_t ClientsPeakMemInput[CLIENTS_PEAK_MEM_USAGE_SLOTS];
 size_t ClientsPeakMemOutput[CLIENTS_PEAK_MEM_USAGE_SLOTS];
 
 int clientsCronTrackExpansiveClients(client *c) {
-    size_t in_usage = sdsAllocSize(c->querybuf);
+    size_t in_usage = sdsZmallocSize(c->querybuf) + c->argv_len_sum;
     size_t out_usage = getClientOutputBufferMemoryUsage(c);
     int i = server.unixtime % CLIENTS_PEAK_MEM_USAGE_SLOTS;
     int zeroidx = (i+1) % CLIENTS_PEAK_MEM_USAGE_SLOTS;
@@ -1625,6 +1625,32 @@ int clientsCronTrackExpansiveClients(client *c) {
     return 0; /* This function never terminates the client. */
 }
 
+void removeClientFromEvictionPool(client *c) {
+    if (c->client_cron_last_memory_usage < server.client_eviction_pull_min)
+        return;
+
+
+    uint64_t old_score = htonu64(c->client_cron_last_memory_usage);
+    raxRemove(server.client_eviction_pull, (void*)&old_score, 8, NULL);
+
+    raxIterator ri;
+    if (c->client_cron_last_memory_usage == server.client_eviction_pull_min) {
+        raxStart(&ri,server.client_eviction_pull);
+        raxSeek(&ri,"^",NULL,0);
+        if (raxNext(&ri))
+            server.client_eviction_pull_min = ((client*)ri.data)->client_cron_last_memory_usage;
+        raxStop(&ri);
+    }
+
+    if (c->client_cron_last_memory_usage == server.client_eviction_pull_max) {
+        raxStart(&ri,server.client_eviction_pull);
+        raxSeek(&ri,"$",NULL,0);
+        if (raxPrev(&ri))
+            server.client_eviction_pull_max = ((client*)ri.data)->client_cron_last_memory_usage;
+        raxStop(&ri);
+    }
+}
+
 /* Iterating all the clients when we need the total is too slow and
  * in turn would make the INFO command too slow. So we perform this
  * computation incrementally and track the (not instantaneous but updated
@@ -1643,6 +1669,32 @@ int updateClientMemUsage(client *c) {
     server.stat_clients_type_memory[c->client_cron_last_memory_type] -=
         c->client_cron_last_memory_usage;
     server.stat_clients_type_memory[type] += mem;
+
+    /* Update the record in the clients eviction rax */
+    //TODO: score should include clientID in case there are two clients with the same score
+    //TODO: score may not just be used memory, it might need to include age and others
+    //TODO: skip non normal client types, and handle cases where client changes type
+    removeClientFromEvictionPool(c);
+    if (raxSize(server.client_eviction_pull) < CLIENT_EVICTION_POOL || mem > server.client_eviction_pull_min) {
+        uint64_t score = htonu64(mem);
+        raxInsert(server.client_eviction_pull, (void*)&score, 8, c, NULL);
+        if (mem < server.client_eviction_pull_min)
+            server.client_eviction_pull_min = mem;
+        if (mem > server.client_eviction_pull_max)
+            server.client_eviction_pull_max = mem;
+
+        /* too many items? remove the smallest one */
+        if (raxSize(server.client_eviction_pull) > CLIENT_EVICTION_POOL) {
+            raxIterator ri;
+            raxStart(&ri,server.client_eviction_pull);
+            raxSeek(&ri,"^",NULL,0);
+            if (raxNext(&ri))
+                raxRemove(server.client_eviction_pull, ri.key, ri.key_len, NULL);
+            raxStop(&ri);
+        }
+
+    }
+
     /* Remember what we added and where, to remove it next time. */
     c->client_cron_last_memory_usage = mem;
     c->client_cron_last_memory_type = type;
@@ -2282,7 +2334,7 @@ void beforeSleep(struct aeEventLoop *eventLoop) {
     /* Close clients that need to be closed asynchronous */
     freeClientsInAsyncFreeQueue();
 
-    /* Disconnect some clients if they are consuming too much memory. */
+    /* Disconnect some clients if total clients memory is too high. */
     clientsEviction();
 
     /* Before we are going to sleep, let the threads access the dataset by
@@ -2866,6 +2918,7 @@ void resetServerStats(void) {
     server.stat_expired_time_cap_reached_count = 0;
     server.stat_expire_cycle_time_used = 0;
     server.stat_evictedkeys = 0;
+    server.stat_evictedclients = 0;
     server.stat_keyspace_misses = 0;
     server.stat_keyspace_hits = 0;
     server.stat_active_defrag_hits = 0;
@@ -2934,6 +2987,9 @@ void initServer(void) {
     server.clients_pending_write = listCreate();
     server.clients_pending_read = listCreate();
     server.clients_timeout_table = raxNew();
+    server.client_eviction_pull = raxNew();
+    server.client_eviction_pull_max = 0;
+    server.client_eviction_pull_min = -1;
     server.slaveseldb = -1; /* Force to emit the first SELECT command. */
     server.unblocked_clients = listCreate();
     server.ready_keys = listCreate();
@@ -4555,6 +4611,7 @@ sds genRedisInfoString(const char *section) {
             "expired_time_cap_reached_count:%lld\r\n"
             "expire_cycle_cpu_milliseconds:%lld\r\n"
             "evicted_keys:%lld\r\n"
+            "evicted_clients:%lld\r\n"
             "keyspace_hits:%lld\r\n"
             "keyspace_misses:%lld\r\n"
             "pubsub_channels:%ld\r\n"
@@ -4590,6 +4647,7 @@ sds genRedisInfoString(const char *section) {
             server.stat_expired_time_cap_reached_count,
             server.stat_expire_cycle_time_used/1000,
             server.stat_evictedkeys,
+            server.stat_evictedclients,
             server.stat_keyspace_hits,
             server.stat_keyspace_misses,
             dictSize(server.pubsub_channels),
