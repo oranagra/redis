@@ -1,6 +1,7 @@
 start_server {tags {"maxmemory"}} {
     r config set maxmemory 10mb
     r config set maxmemory-policy allkeys-lru
+    r config set client-output-buffer-limit "normal 0 2mb 0"
     set rd [redis_deferring_client]
 
     proc refill {} {
