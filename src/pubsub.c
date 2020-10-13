@@ -325,6 +325,7 @@ int pubsubPublishMessage(robj *channel, robj *message) {
         while ((ln = listNext(&li)) != NULL) {
             client *c = ln->value;
             addReplyPubsubMessage(c,channel,message);
+            updateClientMemUsage(c);
             receivers++;
         }
     }
@@ -344,6 +345,7 @@ int pubsubPublishMessage(robj *channel, robj *message) {
             while ((ln = listNext(&li)) != NULL) {
                 client *c = listNodeValue(ln);
                 addReplyPubsubPatMessage(c,pattern,channel,message);
+                updateClientMemUsage(c);
                 receivers++;
             }
         }
