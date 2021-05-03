@@ -187,6 +187,25 @@ jobs:
     - name: cluster tests
       run: ./runtest-cluster
 
+  test-freebsd:
+    runs-on: macos-latest
+    if: github.repository == 'redis/redis'
+    timeout-minutes: 14400
+    steps:
+    - uses: actions/checkout@v2
+    - name: test
+      uses: vmactions/freebsd-vm@v0.1.4
+      with:
+        usesh: true
+        sync: rsync
+        prepare: pkg install -y bash gmake lang/tcl86 lang/tclx
+        run: >
+          gmake &&
+          ./runtest --accurate --verbose --no-latency &&
+          MAKE=gmake ./runtest-moduleapi --verbose &&
+          ./runtest-sentinel &&
+          ./runtest-cluster
+
   test-alpine-jemalloc:
     runs-on: ubuntu-latest
     if: github.repository == 'redis/redis'
