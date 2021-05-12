@@ -2,10 +2,6 @@ name: "CodeQL"
 
 on:
   push:
-  pull_request:
-  schedule:
-    # run weekly new vulnerability was added to the the database
-    - cron: '0 0 * * 0'
 
 jobs:
   analyze:
@@ -26,8 +22,10 @@ jobs:
       with:
         languages: ${{ matrix.language }}
 
-    - name: Autobuild
-      uses: github/codeql-action/autobuild@v1
+    - name: Build
+      run: |
+        sudo apt-get update && sudo apt-get install libc6-dev-i386
+        make 32bit
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v1

@@ -95,20 +95,20 @@
 #if defined(USE_JEMALLOC) && defined(JEMALLOC_FRAG_HINT)
 #define HAVE_DEFRAG
 #endif
-
-void *zmalloc(size_t size);
-void *zcalloc(size_t size);
-void *zrealloc(void *ptr, size_t size);
-void *ztrymalloc(size_t size);
-void *ztrycalloc(size_t size);
-void *ztryrealloc(void *ptr, size_t size);
+typedef unsigned long long lsize_t;
+void *zmalloc(lsize_t size);
+void *zcalloc(lsize_t size);
+void *zrealloc(void *ptr, lsize_t size);
+void *ztrymalloc(lsize_t size);
+void *ztrycalloc(lsize_t size);
+void *ztryrealloc(void *ptr, lsize_t size);
 void zfree(void *ptr);
-void *zmalloc_usable(size_t size, size_t *usable);
-void *zcalloc_usable(size_t size, size_t *usable);
-void *zrealloc_usable(void *ptr, size_t size, size_t *usable);
-void *ztrymalloc_usable(size_t size, size_t *usable);
-void *ztrycalloc_usable(size_t size, size_t *usable);
-void *ztryrealloc_usable(void *ptr, size_t size, size_t *usable);
+void *zmalloc_usable(lsize_t size, size_t *usable);
+void *zcalloc_usable(lsize_t size, size_t *usable);
+void *zrealloc_usable(void *ptr, lsize_t size, size_t *usable);
+void *ztrymalloc_usable(lsize_t size, size_t *usable);
+void *ztrycalloc_usable(lsize_t size, size_t *usable);
+void *ztryrealloc_usable(void *ptr, lsize_t size, size_t *usable);
 void zfree_usable(void *ptr, size_t *usable);
 char *zstrdup(const char *s);
 size_t zmalloc_used_memory(void);
@@ -124,7 +124,7 @@ void zlibc_free(void *ptr);
 
 #ifdef HAVE_DEFRAG
 void zfree_no_tcache(void *ptr);
-void *zmalloc_no_tcache(size_t size);
+void *zmalloc_no_tcache(lsize_t size);
 #endif
 
 #ifndef HAVE_MALLOC_SIZE

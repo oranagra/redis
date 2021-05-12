@@ -96,7 +96,7 @@ static void (*zmalloc_oom_handler)(size_t) = zmalloc_default_oom;
 
 /* Try allocating memory, and return NULL if failed.
  * '*usable' is set to the usable size if non NULL. */
-void *ztrymalloc_usable(size_t size, size_t *usable) {
+void *ztrymalloc_usable(lsize_t size, size_t *usable) {
     ASSERT_NO_SIZE_OVERFLOW(size);
     void *ptr = malloc(MALLOC_MIN_SIZE(size)+PREFIX_SIZE);
 
@@ -115,21 +115,21 @@ void *ztrymalloc_usable(size_t size, size_t *usable) {
 }
 
 /* Allocate memory or panic */
-void *zmalloc(size_t size) {
+void *zmalloc(lsize_t size) {
     void *ptr = ztrymalloc_usable(size, NULL);
     if (!ptr) zmalloc_oom_handler(size);
     return ptr;
 }
 
 /* Try allocating memory, and return NULL if failed. */
-void *ztrymalloc(size_t size) {
+void *ztrymalloc(lsize_t size) {
     void *ptr = ztrymalloc_usable(size, NULL);
     return ptr;
 }
 
 /* Allocate memory or panic.
  * '*usable' is set to the usable size if non NULL. */
-void *zmalloc_usable(size_t size, size_t *usable) {
+void *zmalloc_usable(lsize_t size, size_t *usable) {
     void *ptr = ztrymalloc_usable(size, usable);
     if (!ptr) zmalloc_oom_handler(size);
     return ptr;
@@ -139,7 +139,7 @@ void *zmalloc_usable(size_t size, size_t *usable) {
  * and go straight to the allocator arena bins.
  * Currently implemented only for jemalloc. Used for online defragmentation. */
 #ifdef HAVE_DEFRAG
-void *zmalloc_no_tcache(size_t size) {
+void *zmalloc_no_tcache(lsize_t size) {
     ASSERT_NO_SIZE_OVERFLOW(size);
     void *ptr = mallocx(size+PREFIX_SIZE, MALLOCX_TCACHE_NONE);
     if (!ptr) zmalloc_oom_handler(size);
@@ -156,7 +156,7 @@ void zfree_no_tcache(void *ptr) {
 
 /* Try allocating memory and zero it, and return NULL if failed.
  * '*usable' is set to the usable size if non NULL. */
-void *ztrycalloc_usable(size_t size, size_t *usable) {
+void *ztrycalloc_usable(lsize_t size, size_t *usable) {
     ASSERT_NO_SIZE_OVERFLOW(size);
     void *ptr = calloc(1, MALLOC_MIN_SIZE(size)+PREFIX_SIZE);
     if (ptr == NULL) return NULL;
@@ -175,21 +175,21 @@ void *ztrycalloc_usable(size_t size, size_t *usable) {
 }
 
 /* Allocate memory and zero it or panic */
-void *zcalloc(size_t size) {
+void *zcalloc(lsize_t size) {
     void *ptr = ztrycalloc_usable(size, NULL);
     if (!ptr) zmalloc_oom_handler(size);
     return ptr;
 }
 
 /* Try allocating memory, and return NULL if failed. */
-void *ztrycalloc(size_t size) {
+void *ztrycalloc(lsize_t size) {
     void *ptr = ztrycalloc_usable(size, NULL);
     return ptr;
 }
 
 /* Allocate memory or panic.
  * '*usable' is set to the usable size if non NULL. */
-void *zcalloc_usable(size_t size, size_t *usable) {
+void *zcalloc_usable(lsize_t size, size_t *usable) {
     void *ptr = ztrycalloc_usable(size, usable);
     if (!ptr) zmalloc_oom_handler(size);
     return ptr;
@@ -197,7 +197,7 @@ void *zcalloc_usable(size_t size, size_t *usable) {
 
 /* Try reallocating memory, and return NULL if failed.
  * '*usable' is set to the usable size if non NULL. */
-void *ztryrealloc_usable(void *ptr, size_t size, size_t *usable) {
+void *ztryrealloc_usable(void *ptr, lsize_t size, size_t *usable) {
     ASSERT_NO_SIZE_OVERFLOW(size);
 #ifndef HAVE_MALLOC_SIZE
     void *realptr;
@@ -246,21 +246,21 @@ void *ztryrealloc_usable(void *ptr, size_t size, size_t *usable) {
 }
 
 /* Reallocate memory and zero it or panic */
-void *zrealloc(void *ptr, size_t size) {
+void *zrealloc(void *ptr, lsize_t size) {
     ptr = ztryrealloc_usable(ptr, size, NULL);
     if (!ptr && size != 0) zmalloc_oom_handler(size);
     return ptr;
 }
 
 /* Try Reallocating memory, and return NULL if failed. */
-void *ztryrealloc(void *ptr, size_t size) {
+void *ztryrealloc(void *ptr, lsize_t size) {
     ptr = ztryrealloc_usable(ptr, size, NULL);
     return ptr;
 }
 
 /* Reallocate memory or panic.
  * '*usable' is set to the usable size if non NULL. */
-void *zrealloc_usable(void *ptr, size_t size, size_t *usable) {
+void *zrealloc_usable(void *ptr, lsize_t size, size_t *usable) {
     ptr = ztryrealloc_usable(ptr, size, usable);
     if (!ptr && size != 0) zmalloc_oom_handler(size);
     return ptr;
