@@ -135,8 +135,7 @@ jobs:
 
   test-ubuntu-tls:
     runs-on: ubuntu-latest
-    if: github.repository == 'oranagra/redis'
-    if: github.event.inputs.tls != 'false'
+    if: github.repository == 'oranagra/redis' && github.event.inputs.tls != 'false'
     timeout-minutes: 14400
     steps:
     - uses: actions/checkout@v2
@@ -184,8 +183,7 @@ jobs:
 
   test-valgrind:
     runs-on: ubuntu-latest
-    if: github.repository == 'oranagra/redis'
-    if: github.event.inputs.valgrind != 'false'
+    if: github.repository == 'oranagra/redis' && github.event.inputs.valgrind != 'false'
     timeout-minutes: 14400
     steps:
     - uses: actions/checkout@v2
@@ -205,8 +203,7 @@ jobs:
 
   test-valgrind-no-malloc-usable-size:
     runs-on: ubuntu-latest
-    if: github.repository == 'oranagra/redis'
-    if: github.event.inputs.valgrind != 'false'
+    if: github.repository == 'oranagra/redis' && github.event.inputs.valgrind != 'false'
     timeout-minutes: 14400
     steps:
     - uses: actions/checkout@v2
@@ -246,8 +243,7 @@ jobs:
 
   test-centos7-tls:
     runs-on: ubuntu-latest
-    if: github.repository == 'oranagra/redis'
-    if: github.event.inputs.tls != 'false'
+    if: github.repository == 'oranagra/redis' && github.event.inputs.tls != 'false'
     container: centos:7
     timeout-minutes: 14400
     steps:
@@ -299,8 +295,7 @@ jobs:
 
   test-freebsd:
     runs-on: macos-latest
-    if: github.repository == 'oranagra/redis'
-    if: github.event.inputs.freebsd != 'false'
+    if: github.repository == 'oranagra/redis' && github.event.inputs.freebsd != 'false'
     timeout-minutes: 14400
     steps:
     - uses: actions/checkout@v2
