@@ -165,8 +165,7 @@ jobs:
 
   test-ubuntu-io-threads:
     runs-on: ubuntu-latest
-    if: github.repository == 'oranagra/redis'
-    if: github.event.inputs.iothreads != 'false'
+    if: github.repository == 'oranagra/redis' && github.event.inputs.iothreads != 'false'
     timeout-minutes: 14400
     steps:
     - uses: actions/checkout@v2
