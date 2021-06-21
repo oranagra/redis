@@ -313,7 +313,7 @@ jobs:
           gmake &&
           ./runtest --accurate --verbose --no-latency --dump-logs ${{github.event.inputs.arguments}} &&
           MAKE=gmake ./runtest-moduleapi --verbose ${{github.event.inputs.arguments}} &&
-          if [ ${{github.event.inputs.sentinel}}  == 'true' ] ; then ./runtest-sentinel ${{github.event.inputs.arguments}} ; fi &&
+          if [ ${{github.event.inputs.sentinel}} == 'true' ] ; then ./runtest-sentinel ${{github.event.inputs.arguments}} ; fi &&
           if [ ${{github.event.inputs.cluster}} == 'true' ] ; then ./runtest-cluster ${{github.event.inputs.arguments}} ; fi
 
   test-alpine-jemalloc:
